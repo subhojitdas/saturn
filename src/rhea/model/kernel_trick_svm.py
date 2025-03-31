@@ -3,10 +3,8 @@ from sklearn.datasets import make_moons
 from sklearn.svm import SVC
 import matplotlib.pyplot as plt
 
-# 🎨 Generate toy dataset: Moons dataset (not linearly separable)
 X, y = make_moons(n_samples=200, noise=0.1, random_state=42)
 
-# 🚀 Define SVM with RBF kernel
 model = SVC(kernel='rbf', C=1, gamma='scale')
 model.fit(X, y)
 
