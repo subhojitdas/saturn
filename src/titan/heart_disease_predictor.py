@@ -60,7 +60,7 @@ class LogisticRegressionHeartDisease:
             z = x_with_bias @ theta
             h = self.sigmoid(z)
 
-            gradient = (1/feature_dimention) * (x_with_bias.T @ (h - y_train))
+            gradient = (1/feature_sample) * (x_with_bias.T @ (h - y_train))
             theta -= gradient
 
         self.theta = theta
