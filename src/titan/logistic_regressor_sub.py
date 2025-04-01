@@ -38,6 +38,22 @@ class LogisticRegressionSub:
 
         self.theta = theta
 
+    def fit_with_regularization(self, X_train, y_train, lambda_regularization=0.1):
+        feature_sample, feature_dimention = X_train.shape
+        theta = np.zeros(feature_dimention + 1)
+        x_with_bias = np.c_[np.ones((feature_sample, 1)), X_train]
+
+        for i in range(1000):
+            z = x_with_bias @ theta
+            h = self.sigmoid(z)
+
+            gradient = (1/feature_sample) * (x_with_bias.T @ (h - y_train))
+            # Add L2 penalty term (ignore bias term by excluding theta[0])
+            gradient[1:] += (lambda_regularization / feature_sample) * theta[1:]
+            theta -= gradient
+
+        self.theta = theta
+
     def predict_probability(self, X):
         test_sample = X.shape[0]
         x_with_bias = np.c_[np.ones((test_sample, 1)), X]

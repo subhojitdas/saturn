@@ -1,8 +1,12 @@
 import pandas as pd
 import kagglehub
-from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+import numpy as np
 
 from src.titan.logistic_regressor_sub import LogisticRegressionSub
+from src.titan.random_forest import RandomForestClassifierSub
 
 
 def load_uci_data():
@@ -57,11 +61,49 @@ y = balanced_data['target']
 model = LogisticRegressionSub()
 X_train, X_test, y_train, y_test = model.split_dataset(X, y, with_z_score_normalization=False)
 
-model.fit(X_train, y_train)
-y_pred = model.predict(X_test)
+# z-score normalization only for the numeric features
+numeric_columns = [col for col in X_train.columns if col not in cat_columns]
+print(numeric_columns)
 
-accuracy = model.accuracy(y_test, y_pred)
+scaler = StandardScaler()
+X_train[numeric_columns] = scaler.fit_transform(X_train[numeric_columns])
+X_test[numeric_columns] = scaler.transform(X_test[numeric_columns])
 
-print(f"Accuracy: {accuracy}")
+# Own LR
+# model.fit_with_regularization(X_train, y_train, lambda_regularization=0)
+# y_pred = model.predict(X_test)
+# accuracy = model.accuracy(y_test, y_pred)
+# print(f"Accuracy: {accuracy}")
+#
+# # sklearn LR
+# model = LogisticRegression(C=1/0.1, penalty='l2', max_iter=1000)
+# model.fit(X_train, y_train)
+# predictions = model.predict(X_test)
+#
+# accuracy = np.mean(predictions == y_test)
+# print(f"Scikit-learn Accuracy: {accuracy}")
+#
+# ## Random Forest
+# model = RandomForestClassifier(n_estimators=10, random_state=18)
+# model.fit(X_train, y_train)
+# predictions = model.predict(X_test)
+#
+# accuracy = np.mean(predictions == y_test)
+# print(f"Random Forest Accuracy: {accuracy}")
+import cProfile
 
+sub_model = RandomForestClassifierSub(n_estimators=1)
 
+profiler = cProfile.Profile()
+profiler.enable()
+
+cProfile.run("sub_model.fit(X_train, y_train)", filename="/tmp/random_forest_model")
+
+profiler.disable()
+profiler.dump_stats("/tmp/profile_results.prof")
+
+# sub_model.fit(X_train, y_train)
+predictions = sub_model.predict(X_test)
+accuracy = np.mean(predictions == y_test)
+
+print(f"Own Random Forest Accuracy: {accuracy}")
