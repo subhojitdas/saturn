@@ -3,6 +3,7 @@ from collections import Counter
 
 
 from src.titan.decision_tree import DecisionTreeClassifier
+from src.titan.fast_decision_tree import FastDecisionTreeClassifier
 
 
 class RandomForestClassifierSub:
@@ -27,12 +28,12 @@ class RandomForestClassifierSub:
         self.trees = []
         for _ in range(self.n_estimators):
             X_sample, Y_sample = self.bootstrap_sample(X, Y)
-            tree = DecisionTreeClassifier(
+            tree = FastDecisionTreeClassifier(
                 max_depth=self.max_depth,
                 min_samples_split=self.min_samples_split
             )
 
-            tree.fit(X_sample, Y_sample.to_numpy().reshape(-1, 1))
+            tree.fit(X_sample, Y_sample.reshape(-1, 1))
             self.trees.append(tree)
 
     def predict(self, X):

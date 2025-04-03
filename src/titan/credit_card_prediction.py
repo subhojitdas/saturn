@@ -84,18 +84,16 @@ X_test[numeric_columns] = scaler.transform(X_test[numeric_columns])
 # print(f"Scikit-learn Accuracy: {accuracy}")
 #
 ## Random Forest
-model = RandomForestClassifier(n_estimators=10, random_state=18)
-model.fit(X_train, y_train)
-predictions = model.predict(X_test)
-
-accuracy = np.mean(predictions == y_test)
-print(f"Random Forest Accuracy: {accuracy}")
-
-import cProfile
+# model = RandomForestClassifier(n_estimators=10, random_state=18)
+# model.fit(X_train, y_train)
+# predictions = model.predict(X_test)
+#
+# accuracy = np.mean(predictions == y_test)
+# print(f"Random Forest Accuracy: {accuracy}")
 
 sub_model = RandomForestClassifierSub(n_estimators=10)
 
-sub_model.fit(X_train, y_train)
+sub_model.fit(X_train.to_numpy().astype(np.float64), y_train.to_numpy().astype(np.float64))
 predictions = sub_model.predict(X_test.to_numpy())
 accuracy = np.mean(predictions == y_test)
 
