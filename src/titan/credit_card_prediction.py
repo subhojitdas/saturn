@@ -83,27 +83,20 @@ X_test[numeric_columns] = scaler.transform(X_test[numeric_columns])
 # accuracy = np.mean(predictions == y_test)
 # print(f"Scikit-learn Accuracy: {accuracy}")
 #
-# ## Random Forest
-# model = RandomForestClassifier(n_estimators=10, random_state=18)
-# model.fit(X_train, y_train)
-# predictions = model.predict(X_test)
-#
-# accuracy = np.mean(predictions == y_test)
-# print(f"Random Forest Accuracy: {accuracy}")
+## Random Forest
+model = RandomForestClassifier(n_estimators=10, random_state=18)
+model.fit(X_train, y_train)
+predictions = model.predict(X_test)
+
+accuracy = np.mean(predictions == y_test)
+print(f"Random Forest Accuracy: {accuracy}")
+
 import cProfile
 
-sub_model = RandomForestClassifierSub(n_estimators=1)
+sub_model = RandomForestClassifierSub(n_estimators=10)
 
-profiler = cProfile.Profile()
-profiler.enable()
-
-cProfile.run("sub_model.fit(X_train, y_train)", filename="/tmp/random_forest_model")
-
-profiler.disable()
-profiler.dump_stats("/tmp/profile_results.prof")
-
-# sub_model.fit(X_train, y_train)
-predictions = sub_model.predict(X_test)
+sub_model.fit(X_train, y_train)
+predictions = sub_model.predict(X_test.to_numpy())
 accuracy = np.mean(predictions == y_test)
 
 print(f"Own Random Forest Accuracy: {accuracy}")
