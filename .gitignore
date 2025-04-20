@@ -1,3 +1,4 @@
 .idea/
 src/rhea/data
 Miniforge3-MacOSX-arm64.sh
+src/convnet/before/

@@ -13,7 +13,7 @@ class KNearestNeighbour:
 
         for i in range(num_test):
             distance = np.sum(np.abs(self.Xtrain - X[i, :]), axis=1)
-            k_min_indices = np.argpartition(distance, k)
+            k_min_indices = np.argpartition(distance, k)[:k]
             k_min_values = self.ytrain[k_min_indices]
             bincounts = np.bincount(k_min_values)
             ypred[i] = np.argmax(bincounts)
@@ -61,7 +61,7 @@ Xtrain, ytrain, Xtest, ytest = load_cifar_10_dataset('/Users/subhojit/Downloads/
 
 nearest_neighbor = KNearestNeighbour(Xtrain, ytrain)
 print(f"Total : {ytest.shape[0]}")
-ypred = nearest_neighbor.predict(Xtest, 3)
+ypred = nearest_neighbor.predict(Xtest, 7)
 accuracy = calculate_accuracy(ypred, ytest)
 print(f"Accuracy: {accuracy}")
 
