@@ -1,5 +1,8 @@
 import numpy as np
 
+from convnet.struct.layers import Linear
+
+
 class SoftmaxCrossEntropyLoss:
 
     def forward(self, logits, target):
@@ -24,3 +27,12 @@ class SoftmaxCrossEntropyLoss:
         probs[np.arange(self.logits.shape[0]), self.target] -= 1
         dlogits = probs / self.logits.shape[0]
         return dlogits
+
+    def l2_regularization(self, model, weight_decay):
+        reg = 0.0
+        for layer in model.layers:
+            if isinstance(layer, Linear):
+                w = layer.weights
+                reg += np.sum(w ** 2)
+        return reg * weight_decay
+
