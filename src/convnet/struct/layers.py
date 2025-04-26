@@ -34,6 +34,11 @@ class Linear:
         if self.have_bias:
             self.bias += -lr * self.dbias
 
+    def update_parameters(self, lr):
+        self.weights += -lr * self.dweights
+        if self.have_bias:
+            self.bias += -lr * self.dbias
+
     def parameters(self):
         return [self.weights] + [self.bias] if self.have_bias else [self.weights]
 
