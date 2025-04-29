@@ -37,9 +37,9 @@ class VanillaBatchRNN:
         return np.array(self.outputs)
 
     def backward(self, targets):
-        # targets is of shape (batch_size, seq_len)
-        batch_size = targets.shape[0]
-        seq_len = targets.shape[1]
+        # targets is of shape (seq_len, batch_size)
+        batch_size = targets.shape[1]
+        seq_len = targets.shape[0]
 
         dWhh = np.zeros_like(self.Whh)
         dWxh = np.zeros_like(self.Wxh)
@@ -50,30 +50,28 @@ class VanillaBatchRNN:
         dh_next = np.zeros((batch_size, self.hidden_size))
 
         for t in reversed(range(seq_len)):
-            xt = self.inputs[:, t, :]  # Shape: (batch_size, input_size)
-            ht = self.hidden[t]  # Shape: (batch_size, hidden_size)
-            hprev = self.hidden[t - 1] if t > 0 else np.zeros_like(ht)  # Shape: (batch_size, hidden_size)
-            yhat = self.outputs[t]  # Shape: (batch_size, output_size)
+            xt = self.inputs[t].squeeze(-1)
+            ht = self.hidden[t]
+            hprev = self.hidden[t - 1] if t > 0 else np.zeros_like(ht)
+            yhat = self.outputs[t]
 
-            # Calculate softmax loss gradient
             exp_logits = np.exp(yhat - np.max(yhat, axis=1, keepdims=True))
             probs = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
             dy = probs
-            batch_targets = targets[:, t]  # Shape: (batch_size,)
-            dy[np.arange(batch_size), batch_targets] -= 1  # Subtract 1 for the true class
+            batch_targets = targets[t, :]
+            dy[np.arange(batch_size), batch_targets] -= 1
 
-            # Calculate gradients
-            dWhy += np.dot(dy.T, ht)  # Shape: (output_size, hidden_size)
-            dby += np.sum(dy, axis=0, keepdims=True)  # Shape: (output_size,)
+            dWhy += dy.T @ ht
+            dby += np.sum(dy, axis=0, keepdims=True).T
 
-            dh = np.dot(dy, self.Why) + dh_next  # Shape: (batch_size, hidden_size)
-            da = (1 - ht ** 2) * dh  # Derivative of tanh
+            dh = dy @ self.Why + dh_next
+            da = (1 - ht ** 2) * dh
 
-            dWxh += np.dot(da.T, xt)  # Shape: (hidden_size, input_size)
-            dWhh += np.dot(da.T, hprev)  # Shape: (hidden_size, hidden_size)
-            dbh += np.sum(da, axis=0, keepdims=True)  # Shape: (hidden_size,)
+            dWxh += da.T @ xt
+            dWhh += da.T @ hprev
+            dbh += np.sum(da, axis=0, keepdims=True).T
 
-            dh_next = np.dot(da, self.Whh)  # Shape: (batch_size, hidden_size)
+            dh_next = da @ self.Whh
 
         self.grads = {
             'Whh': dWhh,
@@ -85,21 +83,25 @@ class VanillaBatchRNN:
         return self.grads
 
     def train_step(self, inputs, targets):
-        # inputs and targets are now batches
         outputs = self.forward(inputs)
         loss = self.compute_loss(outputs, targets)
         self.backward(targets)
-        lr = 0.1  # Learning rate
+        lr = 0.1
         self.update_parameters(lr)
         return loss
 
     def compute_loss(self, outputs, targets):
-        loss = 0.0
-        for y_hat, target in zip(outputs, targets):
-            exp_logits = np.exp(y_hat - np.max(y_hat))
-            probs = exp_logits / np.sum(exp_logits)
-            loss += -np.log(probs[target, 0] + 1e-8)
-        return loss / len(outputs)
+        # outputs => (seq_len, batch_size, output_class)
+        # target => (seq_len, batch_size) and contains number of the char index i.e. THE class
+        seq_len, batch_size, output_class = outputs.shape
+        outputs = outputs.reshape(seq_len * batch_size, output_class)
+        targets = targets.reshape(seq_len * batch_size)
+
+        exp_logits = np.exp(outputs - np.max(outputs, axis=1, keepdims=True))
+        probs = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
+        correct_class_prob = probs[np.arange(seq_len*batch_size), targets]
+        loss = -np.mean(np.log(correct_class_prob + 1e-8))
+        return loss
 
     def update_parameters(self, lr=0.01):
         self.Whh += -lr * self.grads['Whh']
