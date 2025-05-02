@@ -3,10 +3,10 @@ import numpy as np
 
 class LSTMCellBatch:
 
-    def __init__(self, input_size, hidden_size):
-        self.input_size = input_size
+    def __init__(self, embedding_dim, hidden_size):
         self.hidden_size = hidden_size
-        self.concat_size = input_size + hidden_size
+        self.embedding_dim = embedding_dim
+        self.concat_size = embedding_dim + hidden_size
 
         self.Wf = np.random.randn(self.hidden_size, self.concat_size) * 0.1
         self.bf = np.zeros((self.hidden_size, 1))
@@ -78,11 +78,13 @@ class LSTMCellBatch:
 
 
 class LSTMLayerBatch:
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self, input_size, hidden_size, output_size, embedding_dim):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
-        self.lstm_batch_cell = LSTMCellBatch(input_size, hidden_size)
+        self.embedding_dim = embedding_dim
+        self.embedding = np.random.randn(self.embedding_dim, self.input_size) * 0.1
+        self.lstm_batch_cell = LSTMCellBatch(self.embedding_dim, hidden_size)
 
         self.Wy = np.random.randn(output_size, hidden_size) * 0.1
         self.by = np.zeros((output_size, 1))
