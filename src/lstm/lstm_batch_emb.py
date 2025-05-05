@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class LSTMCellBatch:
+class LSTMCellBatchEmb:
 
     def __init__(self, embedding_dim, hidden_size):
         self.hidden_size = hidden_size
@@ -77,24 +77,24 @@ class LSTMCellBatch:
         return dxt, dh_prev, dc_prev, grads
 
 
-class LSTMLayerBatch:
+class LSTMLayerBatchEmb:
     def __init__(self, input_size, hidden_size, output_size, embedding_dim):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
         self.embedding_dim = embedding_dim
-        self.embedding = np.random.randn(self.embedding_dim, self.input_size) * 0.1
-        self.lstm_batch_cell = LSTMCellBatch(self.embedding_dim, hidden_size)
+        self.embedding = np.random.randn(self.input_size, self.embedding_dim) * 0.1
+        self.lstm_batch_cell = LSTMCellBatchEmb(self.embedding_dim, hidden_size)
 
         self.Wy = np.random.randn(output_size, hidden_size) * 0.1
         self.by = np.zeros((output_size, 1))
         self.cache = []
 
-    def forward(self, inputs, h0, c0):
-        # inputs => (seq_len, batch_size, input_size)
+    def forward(self, input_indices, h0, c0):
+        # inputs => (seq_len, batch_size)
         # h0 => (hidden_size, batch_size)
         # c0 => (hidden_size, input_size)
-        seq_len, batch_size, _ = inputs.shape
+        seq_len, batch_size = input_indices.shape
         self.cache = []
         # h0 = np.random.randn(self.hidden_size, self.hidden_size) * 0.1
         # c0 = np.random.randn(self.hidden_size, self.hidden_size) * 0.1
@@ -102,13 +102,13 @@ class LSTMLayerBatch:
         ht, ct = h0, c0
 
         for t in range(seq_len):
-            input = inputs[t] # (batch_size, input_size)
-            xt = input.T # (input_size, batch_size)
+            char_ids = input_indices[t] # (batch_size,)
+            xt = self.embedding[char_ids].T # (embedding_dim, batch_size)
 
             ht, ct = self.lstm_batch_cell.forward(xt, ht, ct)
             yt = self.Wy @ ht + self.by
             outputs.append((yt, ht, ct))
-            self.cache.append((xt, ht, ct, self.lstm_batch_cell.cache))
+            self.cache.append((char_ids, ht, ct, self.lstm_batch_cell.cache))
         return outputs
 
     def backward(self, dy_list):
@@ -116,6 +116,7 @@ class LSTMLayerBatch:
         dby = np.zeros_like(self.by)
         dh_next = np.zeros_like(self.cache[0][1])
         dc_next = np.zeros_like(self.cache[0][2])
+        dembedding = np.zeros_like(self.embedding)
 
         grads = {
             'dWf': 0, 'dbf': 0,
@@ -125,17 +126,20 @@ class LSTMLayerBatch:
         }
 
         for t in reversed(range(len(self.cache))):
-            xt, ht, ct, lstm_cache = self.cache[t]
+            char_ids, ht, ct, lstm_cache = self.cache[t]
             dy = dy_list[t]
             dWy += dy @ ht.T
             dby += dy.sum(axis=1, keepdims=True)
             dh = self.Wy.T @ dy + dh_next
             self.lstm_batch_cell.cache = lstm_cache
             dx, dh_next, dc_next, g = self.lstm_batch_cell.backward(dh, dc_next)
+
+            for i, idx in enumerate(char_ids):
+                dembedding[idx] += dx[:, i]
             for k in grads:
                 grads[k] += g[k]
 
-        return grads, dWy, dby
+        return grads, dWy, dby, dembedding
 
     def clip_gradients(self, grads, max_norm=5.0):
         total_norm = sum(np.sum(g ** 2) for g in grads.values())
@@ -145,7 +149,7 @@ class LSTMLayerBatch:
                 grads[k] *= max_norm / (total_norm + 1e-6)
         return grads
 
-    def update_parameters(self, grads, dWy, dby, lr):
+    def update_parameters(self, grads, dWy, dby, dembedding, lr):
         clipped_grads = self.clip_gradients(grads)
         self.lstm_batch_cell.Wf -= lr * clipped_grads['dWf']
         self.lstm_batch_cell.bf -= lr * clipped_grads['dbf']
@@ -157,4 +161,5 @@ class LSTMLayerBatch:
         self.lstm_batch_cell.bc -= lr * clipped_grads['dbc']
         self.Wy += -lr * dWy
         self.by += -lr * dby
+        self.embedding_dim += -lr * dembedding
 
