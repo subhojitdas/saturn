@@ -8,11 +8,12 @@ batch_size = 32
 block_size = 8
 max_iter = 5000
 eval_interval = 100
-learning_rate = 1e-2
+learning_rate = 1e-3
 eval_iters = 200
 n_embd = 32
 
-torch.manual_seed(1806)
+# torch.manual_seed(1806)
+torch.manual_seed(1337)
 
 with open('input.txt', 'r', encoding='utf-8') as f:
     text = f.read()
@@ -38,22 +39,42 @@ def get_batch(split):
     return x, y
 
 
+class Head(nn.Module):
+    def __init__(self, head_size):
+        super().__init__()
+        self.key = nn.Linear(n_embd, head_size, bias=False)
+        self.value = nn.Linear(n_embd, head_size, bias=False)
+        self.query = nn.Linear(n_embd, head_size, bias=False)
+        self.register_buffer('tril', torch.ones(block_size, block_size))
+
+    def forward(self, x):
+        B, T, C = x.shape
+        k = self.key(x)
+        q = self.query(x)
+        wei = q @ k.transpose(-2, -1) * C**-0.5
+        # wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))
+        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))
+        wei = F.softmax(wei, dim=-1)
+        v = self.value(x)
+        out = wei @ v
+        return out
+
+
 class NotABigramLanguageModel(nn.Module):
     def __init__(self):
         super().__init__()
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
         self.lm_head = nn.Linear(n_embd, vocab_size)
+        self.sa_head = Head(n_embd)
 
     def forward(self, idx, targets=None):
         B, T = idx.shape
-
         token_emb = self.token_embedding_table(idx) # (B, T, C)
         pos_emb = self.position_embedding_table(torch.arange(T))
         x = token_emb + pos_emb
+        x = self.sa_head(x)
         logits = self.lm_head(x) # (B, T, vocab_size)
-
-
         #loss
         if targets is None:
             loss = None
@@ -67,6 +88,7 @@ class NotABigramLanguageModel(nn.Module):
 
     #generation
     def generate(self, idx, max_new_tokens):
+        # idx => (B, T)
         for i in range(max_new_tokens):
             idx_cond = idx[:, -block_size:]
             logits, loss = self(idx_cond) # logits => (B,T,C)
@@ -75,6 +97,7 @@ class NotABigramLanguageModel(nn.Module):
             idx_next = torch.multinomial(probs, num_samples=1) # (B,1)
             idx = torch.cat((idx, idx_next), dim=1) # (B, T+1)
         return idx
+
 
 
 @torch.no_grad()
