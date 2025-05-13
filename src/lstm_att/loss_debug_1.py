@@ -18,13 +18,16 @@ stoi = {ch:i for i, ch in enumerate(chars)}
 itos = {i:ch for i, ch in enumerate(chars)}
 vocab_size = len(chars)
 
-x = df_train.iloc[:, 2].to_numpy()
-y = df_train.iloc[:, 0].to_numpy()
-n = int(0.9*len(x))
-xtrain = x[:n]
-ytrain = y[:n]
-xval = x[n:]
-yval = y[n:]
+
+df_filtered = df_train[df_train.iloc[:, 2].str.len() < 256]
+x_filtered = df_filtered.iloc[:, 2].to_numpy()
+y_filtered = df_filtered.iloc[:, 0].to_numpy()
+
+n = int(0.9*len(x_filtered))
+xtrain = x_filtered[:n]
+ytrain = y_filtered[:n]
+xval = x_filtered[n:]
+yval = y_filtered[n:]
 
 xtest = df_test.iloc[:, 2].to_numpy()
 ytest = df_test.iloc[:, 0].to_numpy()
@@ -33,8 +36,13 @@ stoi = {ch:i for i, ch in enumerate(chars)}
 itos = {i:ch for i, ch in enumerate(chars)}
 encode = lambda s: [stoi[xi] for xi in s]
 decode = lambda l: ''.join([itos[li] for li in l])
-encode('asdasdsadas')
-device = "cpu"
+
+if torch.backends.mps.is_available():
+    device = "mps"
+elif torch.cuda.is_available():
+    device = "cuda"
+else:
+    device = "cpu"
 
 def pad_sequences(sequences):
     pad_index = stoi['<PAD>']
@@ -69,9 +77,10 @@ class LSTMClassifier(nn.Module):
         self.lstm = nn.LSTM(
             input_size=embedding_dim,
             hidden_size=hidden_size,
-            batch_first=True
+            batch_first=True,
+            bidirectional=True
         )
-        self.fc = nn.Linear(hidden_size, output_size)
+        self.fc = nn.Linear(hidden_size * 2, output_size)
         nn.init.xavier_uniform_(self.fc.weight)
         nn.init.zeros_(self.fc.bias)
 
@@ -81,3 +90,73 @@ class LSTMClassifier(nn.Module):
         last_hidden = output[:, -1, :]   # (B, H)  <-- last time step
         logits = self.fc(last_hidden)    # (B, C)
         return logits
+
+
+class MLPClassifier(nn.Module):
+    def __init__(self, vocab_size, emb_dim, hidden_dim, num_classes, max_seq_len):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, emb_dim)
+        self.net = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(emb_dim * max_seq_len, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, num_classes)
+        )
+
+    def forward(self, x):
+        x = self.embedding(x)  # (B, T, D)
+        return self.net(x)
+
+
+embedding_dim = 32
+hidden_size = 256
+output_size = 2
+batch_size = 64
+seq_len = 10
+learning_rate = 1e-2
+max_iter = 5000
+eval_interval = 500
+
+# one batch overfitting
+
+# xb, yb = get_batch(10)
+# xb, yb = xb.to(device), yb.to(device)
+model = LSTMClassifier(vocab_size, hidden_size, output_size, embedding_dim)
+# model = MLPClassifier(vocab_size, embedding_dim, hidden_size, output_size, xb.shape[1])
+model = model.to(device)
+optimizer = torch.optim.AdamW(model.parameters(), lr=1e-2)
+
+# 1-batch overfitting loop
+# for step in range(1000):
+#     # print("Input:", xb.shape, xb.dtype, xb.device)
+#     # print("Target:", yb.shape, yb.dtype, yb.device)
+#     logits = model(xb)
+#     loss = F.cross_entropy(logits, yb)
+#     optimizer.zero_grad()
+#     loss.backward()
+#     optimizer.step()
+#     print(f"Step {step}, loss = {loss.item():.4f}")
+#     if step % 100 == 0:
+#         with torch.no_grad():
+#             print("Logits:", logits[:2])
+#             preds = torch.argmax(logits, dim=1)
+#             print("Preds:", preds.tolist())
+#             print("Targets:", yb.tolist())
+
+for step in range(max_iter):
+    xb, yb = get_batch(batch_size)
+    logits = model(xb)
+    loss = F.cross_entropy(logits, yb)
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+    with torch.no_grad():
+        logits = model(xb)
+        probs = torch.softmax(logits, dim=1)
+        print("Confidence range:", probs.max(dim=1).values[:10])
+        preds = torch.argmax(logits, dim=1)
+        print("Preds: ", preds.tolist())
+        print("Targets: ", yb.tolist())
+
+    if step % eval_interval == 0:
+        print(f"step {step}: train loss {loss:.4f}")
