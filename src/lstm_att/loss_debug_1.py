@@ -9,6 +9,12 @@ dataset_dir = '/Users/subhojit/datasets/amazon_review_polarity_csv'
 df_train = pd.read_csv(dataset_dir + '/train.csv')
 df_test = pd.read_csv(dataset_dir + '/test.csv')
 
+
+df_train['label'] = df_train['label'].map({'ham': 0, 'spam': 1})
+texts = df_train['text'].tolist()
+labels = df_train['label'].tolist()
+
+
 review = df_train.iloc[:, 2].to_numpy()
 test_review = df_test.iloc[:, 2].to_numpy()
 all_review = np.concatenate((review, test_review))
@@ -19,9 +25,9 @@ itos = {i:ch for i, ch in enumerate(chars)}
 vocab_size = len(chars)
 
 
-df_filtered = df_train[df_train.iloc[:, 2].str.len() < 256]
-x_filtered = df_filtered.iloc[:, 2].to_numpy()
-y_filtered = df_filtered.iloc[:, 0].to_numpy()
+# df_filtered = df_train[df_train.iloc[:, 2].str.len() < 256]
+x_filtered = df_train.iloc[:, 2].to_numpy()
+y_filtered = df_train.iloc[:, 0].to_numpy()
 
 n = int(0.9*len(x_filtered))
 xtrain = x_filtered[:n]
