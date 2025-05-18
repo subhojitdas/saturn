@@ -2,3 +2,5 @@
 src/rhea/data
 Miniforge3-MacOSX-arm64.sh
 src/convnet/before/
+.DS_Store
+src/.DS_Store
