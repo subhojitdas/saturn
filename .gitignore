@@ -4,3 +4,4 @@ Miniforge3-MacOSX-arm64.sh
 src/convnet/before/
 .DS_Store
 src/.DS_Store
+src/rbm/dataset/
