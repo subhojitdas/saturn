@@ -7,14 +7,14 @@ tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 model = GPT2LMHeadModel.from_pretrained(model_name)
 model.eval()
 
-prompt = 'I love deep learning because '
+prompt = 'what is 2+2 ?'
 
 inputs = tokenizer(prompt, return_tensors="pt")
 
 with torch.no_grad():
     outputs = model.generate(
         input_ids=inputs["input_ids"],
-        max_length=512,
+        max_length=50,
         temperature=0.2,
     )
 
