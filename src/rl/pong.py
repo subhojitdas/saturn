@@ -34,5 +34,22 @@ def image_pre_processor(Im):
     Im[Im != 0] = 1
     return Im.astype(np,float).ravel()
 
+def discounted_reward(reward):
+    discounted_reward = np.zeros_like(reward)
+    running_add = 0
+    for t in reversed(range(0, reward.size)):
+        if reward[t] != 0:
+            running_add = 0
+        running_add = running_add * gamma + reward[t]
+        discounted_reward[t] = running_add
+    return discounted_reward
+
+def policy_forward(x):
+    h = np.dot(model['W1'], x)
+    h[h < 0] = 0
+    logits = np.dot(model['W2'], h)
+    p = sigmoid(logits)
+    return p, h
+
 
 
