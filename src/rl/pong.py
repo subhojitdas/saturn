@@ -51,5 +51,19 @@ def policy_forward(x):
     p = sigmoid(logits)
     return p, h
 
+def policy_backward(dh, dlogp):
+    dW2 = np.dot(dh.T, dlogp).ravel()
+    dh = np.outer(dlogp, model['W2'])
+    dh[dh <= 0] = 0  # backpro prelu
+    dW1 = np.dot(dh.T, epx)
+    return {'W1': dW1, 'W2': dW2}
+
+
+
+
+
+
+
+
 
 
