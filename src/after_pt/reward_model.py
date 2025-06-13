@@ -4,10 +4,11 @@ import torch.nn as nn
 from transformers import AutoModel, AutoTokenizer
 
 class RewardModel(nn.Module):
-    def __init__(self, base_model_name='gpt-2'):
+    def __init__(self, base_model, tokenizer):
         super().__init__()
-        self.base_model = AutoModel.from_pretrained(base_model_name)
-        self.tokenizer = AutoTokenizer.from_pretrained(base_model_name)
+        device = "mps"
+        self.base_model = base_model.to(device)
+        self.tokenizer = tokenizer.to(device)
         # scalar reward head
         self.v_head = nn.Linear(self.base_model.config.hidden_size, 1)
 
