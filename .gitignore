@@ -5,3 +5,4 @@ src/convnet/before/
 .DS_Store
 src/.DS_Store
 src/rbm/dataset/
+src/after_pt/datas

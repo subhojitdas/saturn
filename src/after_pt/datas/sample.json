@@ -1,0 +1,27 @@
+[
+  {
+    "prompt": "What is reinforcement learning?",
+    "chosen": "Reinforcement learning is a type of machine learning where an agent learns by interacting with an environment to maximize cumulative rewards.",
+    "rejected": "Reinforcement learning is about teaching machines to repeat things."
+  },
+  {
+    "prompt": "Explain overfitting in deep learning.",
+    "chosen": "Overfitting happens when a model learns the training data too well, including noise, and performs poorly on new data.",
+    "rejected": "Overfitting means the model doesn't learn anything useful."
+  },
+  {
+    "prompt": "What is the purpose of dropout in neural networks?",
+    "chosen": "Dropout is a regularization technique where randomly selected neurons are ignored during training to prevent overfitting.",
+    "rejected": "Dropout is a way to make a network forget things quickly."
+  },
+  {
+    "prompt": "Define natural language processing.",
+    "chosen": "Natural language processing is a field of AI that focuses on enabling computers to understand and process human language.",
+    "rejected": "It's something to do with computers talking like people."
+  },
+  {
+    "prompt": "What is the role of an activation function in a neural network?",
+    "chosen": "Activation functions introduce non-linearity into neural networks, allowing them to model complex patterns.",
+    "rejected": "It decides whether a neuron is active or not, like a switch."
+  }
+]
