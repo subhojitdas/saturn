@@ -18,7 +18,7 @@ def dataset_split(X, y, feature_index, threshold):
 
 
 def best_split(X, y):
-    best_gini = float("inf")
+    best_gini = float('inf')
     best_index, best_threshold = None, None
 
     n_samples, n_features = X.shape
@@ -27,15 +27,18 @@ def best_split(X, y):
         for threshold in thresholds:
             X_left, y_left, X_right, y_right = dataset_split(X, y, feature_index, threshold)
 
-            if len(y_right) == 0 or len(y_left) == 0:
+            if len(y_left) == 0 or len(y_right) == 0:
                 continue
-            gini_right = gini_impurity(y_right)
+
             gini_left = gini_impurity(y_left)
-            weighted_gini = (gini_left * len(y_left) + gini_right * len(y_right)) / len(y)
+            gini_right = gini_impurity(y_right)
+            weighted_gini = (len(y_left) * gini_left + len(y_right) * gini_right) / len(y)
+
             if weighted_gini < best_gini:
                 best_gini = weighted_gini
                 best_index = feature_index
                 best_threshold = threshold
+
     return best_index, best_threshold
 
 
@@ -49,6 +52,9 @@ class TreeNode:
 
     def is_leaf(self):
         return self.value is not None
+
+    def is_not_leaf(self):
+        return self.value is None
 
 
 def build_tree(X, y, depth=0, max_depth=5, min_sample_split=2):
@@ -67,7 +73,17 @@ def build_tree(X, y, depth=0, max_depth=5, min_sample_split=2):
 
     return TreeNode(feature_index=feature_index, threshold=threshold, left=left_child, right=right_child)
 
+def predict_x(x, node):
+    while node.is_not_leaf():
+        if x[node.feature_index] < node.threshold:
+            node = node.left
+        else:
+            node = node.right
+    return node.value
 
+
+def predict_dataset(X, tree):
+    return np.array([predict_x(x, tree) for x in X])
 
 
 
@@ -82,5 +98,9 @@ X = np.array([
 
 y = np.array([1, 0, 1, 0, 1])
 
-gini = gini_impurity(y)
-print(gini)
+# gini = gini_impurity(y)
+# print(gini)
+
+tree = build_tree(X, y)
+pred = predict_dataset(X, tree)
+print(pred)
