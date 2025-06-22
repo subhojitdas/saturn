@@ -1,8 +1,6 @@
 import numpy as np
-import pandas as pd
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 
 loaded = load_breast_cancer()
 X = loaded.data
@@ -30,17 +28,14 @@ class DecisionStump:
 
 
 import numpy as np
-import pandas as pd
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
-# Load dataset
 data = load_breast_cancer()
 X = data['data']
 y = data['target']
 
-# Convert y to {-1, 1}
 y = np.where(y == 0, -1, 1)
 
 # Split
