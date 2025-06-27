@@ -1,6 +1,10 @@
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 from collections import Counter
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
 
 class RandomForestClassifierCustom:
     def __init__(self, n_estimators=100, max_features="sqrt", max_depth=None):
@@ -53,4 +57,16 @@ class RandomForestClassifierCustom:
             majority_votes.append(vote)
         return majority_votes
 
+
+
+X, y = load_iris(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+
+# Train custom random forest
+clf = RandomForestClassifierCustom(n_estimators=20, max_features='sqrt', max_depth=3)
+clf.fit(X_train, y_train)
+
+# Predict and evaluate
+y_pred = clf.predict(X_test)
+print("Accuracy:", accuracy_score(y_test, y_pred))
 
