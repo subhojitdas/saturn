@@ -7,3 +7,4 @@ src/.DS_Store
 src/rbm/dataset/
 src/after_pt/datas
 src/w2v/dataset/
+src/trad/dataset/
