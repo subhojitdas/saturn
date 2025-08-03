@@ -20,3 +20,5 @@ with torch.no_grad():
 
 generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
 print(generated_text)
+
+np.polyfit([W12, W23], [1,2], deg=1)
